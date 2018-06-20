@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 #
 ###############################################################################
 
-class spline:
+class Spline:
   
 # spline with support in [x_min,x_max] and n >= 8 intervals
    
@@ -141,7 +141,7 @@ class spline:
 #
 ###############################################################################
 
-class d_spline:
+class D_spline:
   
 # the derivative of an spline with support in [x_min,x_max] and n >= 8 intervals
    
@@ -271,7 +271,7 @@ class d_spline:
 #
 ###############################################################################
 
-class d2_spline:
+class D2_spline:
   
 # the derivative of an spline with support in [x_min,x_max] and n >= 8 intervals
    
@@ -394,62 +394,7 @@ class d2_spline:
         return y
       else:
         return self.eval(x)
-        
-# use  '%matplotlib qt' for plotting on external window
 
-#plotting a 3d curve
-
-def curve(t, spx, spy, spz):
-  fig = plt.figure()
-  ax = fig.gca(projection='3d')
-  ax.plot(spx(t), spy(t), spz(t))
-  ax.legend()
-  plt.show()
-
-def solve():
-  n = 12
-  m = 14
-  xmin = 0
-  xmax = 10
-  teta = np.array([0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1])
-  splines = []
-  t = np.arange(xmin - 0.3, xmax + 0.3, 0.02)
-
-  ## Cria cada spline 
-  for i in range(n):
-    a = np.array([0] * n)
-    a[i] = 1
-
-    spl = spline(a, xmin, xmax)
-    splines.append(spl)
-
-    #plt.plot(t, spl(t))
-
-  ## Calculate m = sum of gamma * gammaT && b = 2 * sum tetaj * gammajT
-  M = np.zeros((n, n))
-  b = np.zeros((1, n))
-  for j in range(m):
-    gamma = np.array([[spl(j) for spl in splines]]).T
-    b += teta[j] * gamma.T
-    M += gamma.dot(gamma.T)
-  b = 2 * b.T
-  print("M")
-  print(M)
-
-  print("b")
-  print(b)
-
-  ## Calculate a
-  a = np.linalg.solve(M, 0.5 * b)
-  print("a")
-  print(a)
-
-  final_spline = spline(a, xmin, xmax)
-  plt.plot(t, final_spline(t))
-  plt.show()
-
-if __name__ == '__main__':
-  solve()
 
 
 
