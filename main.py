@@ -1,26 +1,64 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from splines import Spline
+from splines import matrix_m2
 
-def interpolate(n_splines, measurements, xmin = 0, xmax = 1):  
-  M, b = calculate_m_b(n_splines, measurements)
-  a = np.linalg.solve(M, 0.5 * b)
-  final_curve = Spline(a, xmin, xmax)
-  plot_curve(final_curve)
+class Spline_Interpolator:
+  def __init__(self, xmin=0, xmax=1):
+    self.xmin = xmin
+    self.xmax = xmax
 
-def calculate_m_b(n, measurements):
-  m = len(measurements)
-  M = np.zeros((n, n))
-  b = np.zeros((1, n))
-  splines = Spline(np.ones(n), 0, 10)
+  def interpolate(self, measurements, n=-1, lmbda=10):
+    if n == -1:
+      self.n = self.calculate_n(measurements)
+    self.lmbda = lmbda
 
-  ## Calculate m = sum of gamma * gammaT && b = 2 * sum measurementsj * gammajT
-  for j in range(m):
-    gamma = np.array([[splines.beta_j(i, j) for i in range(n)]]).T
-    b += measurements[j] * gamma.T
-    M += gamma.dot(gamma.T)
-  b = 2 * b.T
-  return (M, b)
+    self.gammas = Gammas(self.n, self.xmin, self.xmax)
+    # M, b = self.calculate_m_b(self.n, gammas, measurements)
+    M = self.calculate_M(measurements)
+    b = self.calculate_b(measurements)
+
+    a = np.linalg.solve(M, 0.5 * b)
+    final_curve = Spline(a, xmin, xmax)
+
+    return final_curve
+
+  def calculate_n(self, measurements):
+    m = len(measurements)
+    return max(m / 2, 10)
+
+  def calculate_M(self, measurements):
+    m = len(measurements)
+    M = np.zeros((self.n, self.n))
+    for j in range(m):
+      M += self.gammas.get(j).dot(self.gammas.get(j).T)
+
+    lmbda = 10
+    M += self.lmbda * matrix_m2(self.n)
+
+    return M
+
+  def calculate_b(self, measurements):
+    m = len(measurements)
+    b = np.zeros((1, self.n))
+    for j in range(m):
+      b += measurements[j] * self.gammas.get(j).T
+    b = 2 * b.T
+    return b
+
+class Gammas:
+  def __init__(self, n_splines, xmin = 0, xmax = 1):
+    self.splines = Spline(np.ones(n_splines), xmin, xmax)
+    self.n = n_splines
+
+    self.current = -1
+    self.array = None
+
+  def get(self, j):
+    if j != self.current:
+      self.array = np.array([[self.splines.beta_j(i, j) for i in range(self.n)]]).T
+      self.current = j
+    return self.array
 
 def plot_curve(curve):
   # Plota sempre 100 pontos
@@ -32,6 +70,11 @@ def plot_curve(curve):
 
 if __name__ == '__main__':
   n_spl = 10
+  xmin = 0
   xmax = 10
-  msmnts = np.array([0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1])
-  interpolate(n_splines=n_spl, measurements=msmnts, xmax=xmax)
+  msmnts = np.array([0, 1, 2, 3, 4, 3, 2, 5, 9, 6, 4, 3, 2, 1])
+
+  ip = Spline_Interpolator(xmin, xmax)
+
+  curve = ip.interpolate(msmnts)
+  plot_curve(curve)
